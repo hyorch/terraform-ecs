@@ -2,15 +2,16 @@
 
 #Define an ecs task to deploy a simple web server with nginx
 resource "aws_ecs_task_definition" "web_server" {
-  family                   = "${var.ecs_cluster_name}-web-server"
+  family                   = "bridge-static_mapping-web-server"
   network_mode             = "bridge"
   requires_compatibilities = ["EC2"]
   cpu                      = "256"
   memory                   = "512"
 
+
   container_definitions = jsonencode([
     {
-      name      = "${var.ecs_cluster_name}-web-server"
+      name      = "web-server"
       image     = "nginx:latest"
       cpu       = 256
       memory    = 512
@@ -23,17 +24,17 @@ resource "aws_ecs_task_definition" "web_server" {
         }
       ]
       healthCheck = {
-        "command": [
+        "command" : [
           "CMD-SHELL",
           "curl -f http://localhost/ || exit 1"
         ],
-        "interval": 30,
-        "timeout": 5,
-        "retries": 3,
-        "startPeriod": 30
+        "interval" : 30,
+        "timeout" : 5,
+        "retries" : 3,
+        "startPeriod" : 30
       }
 
-  
+
     }
   ])
 
@@ -44,15 +45,11 @@ resource "aws_ecs_task_definition" "web_server" {
 
 resource "aws_ecs_service" "web_server" {
   name            = "${var.ecs_cluster_name}-web-server"
-  cluster         = aws_ecs_cluster.main.id
+  cluster         = var.ecs_cluster_id
   task_definition = aws_ecs_task_definition.web_server.arn
   desired_count   = 1
   launch_type     = "EC2"
-  #iam_role     = aws_iam_role.ecs_instance_role.arn
 
-  #depends_on = [ aws_iam_role_policy_attachment.ecs_instance_policy ]
-
- 
   tags = {
     Name = "${var.ecs_cluster_name}-web-server"
   }

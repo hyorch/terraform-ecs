@@ -2,7 +2,7 @@
 terraform {
   backend "s3" {
     bucket  = "hyorch-terraform"
-    key     = "terraform-ecs/state"
+    key     = "terraform-ecs-parameters/state"
     region  = "eu-south-2"
     profile = "HyorchAdmin"
   }

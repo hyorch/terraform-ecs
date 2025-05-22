@@ -76,6 +76,15 @@ resource "aws_security_group" "ecs" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # Dynamic Port Mapping for ALB
+  ingress {
+    from_port   = 30000
+    to_port     = 40000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -110,7 +119,7 @@ resource "aws_ecs_capacity_provider" "asg" {
   name = "${var.ecs_cluster_name}-cp"
 
   auto_scaling_group_provider {
-    auto_scaling_group_arn         = aws_autoscaling_group.ecs.arn
+    auto_scaling_group_arn = aws_autoscaling_group.ecs.arn
     #managed_termination_protection = "ENABLED"
 
     managed_scaling {
@@ -124,11 +133,11 @@ resource "aws_ecs_capacity_provider" "asg" {
 }
 
 resource "aws_ecs_cluster_capacity_providers" "main" {
-  cluster_name         = aws_ecs_cluster.main.name
-  capacity_providers   = [aws_ecs_capacity_provider.asg.name]
+  cluster_name       = aws_ecs_cluster.main.name
+  capacity_providers = [aws_ecs_capacity_provider.asg.name]
   default_capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.asg.name
-    weight           = 1
-    base             = 1
+    weight            = 1
+    base              = 1
   }
 }
