@@ -1,7 +1,7 @@
 # Bridge Mode - ALB Dynamic Port Mapping
-
+# Generic container
 resource "aws_ecs_task_definition" "web_server" {
-  family                   = "bridge-alb-web-server"
+  family                   = "bridge-alb-${var.container_name}"
   network_mode             = "bridge"
   requires_compatibilities = ["EC2"]
   cpu                      = "256"
@@ -10,41 +10,16 @@ resource "aws_ecs_task_definition" "web_server" {
 
   container_definitions = jsonencode([
     {
-      name      = "web-server"
-      image     = "hyorch/nginx-show-env:0.0.2"
-      cpu       = 256
-      memory    = 512
+      name   = var.container_name
+      image  = var.container_image
+      cpu    = var.container_cpu
+      memory = var.container_memory
+
       essential = true
-
-      environment = [
-        {
-          name  = "ENV"
-          value = data.aws_ssm_parameter.environment.value
-        },
-        {
-          name  = "DB"
-          value = "db_psql"
-        },
-        {
-          name  = "db_password"
-          value = data.aws_ssm_parameter.db_password.value
-        },
-        {
-          name  = "kafka_password"
-          value = data.aws_secretsmanager_secret_version.kafka_password.secret_string
-        }
-      ]
-
-      secrets = [
-        {
-          name      = "kafkapass"
-          valueFrom = data.aws_secretsmanager_secret.kafka_password.arn
-        }
-      ]
-
+          
       portMappings = [
         {
-          containerPort = 80
+          containerPort = var.container_port
           hostPort      = 0
           protocol      = "tcp"
         }
@@ -74,7 +49,7 @@ resource "aws_lb" "ecs_lb" {
 
 resource "aws_lb_target_group" "web_server" {
   name        = "web-server-tg"
-  port        = 80
+  port        = var.container_port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "instance"
@@ -102,30 +77,6 @@ resource "aws_lb_listener" "web_server" {
   }
 }
 
-# Path based routing. ALB do not support route rewriting.
-resource "aws_lb_listener_rule" "web_server" {
-  listener_arn = aws_lb_listener.web_server.arn
-  priority     = 100
-
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.web_server.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/web-server/*"]
-    }
-
-  }
-
-  tags = {
-    name = "web-server"
-  }
-
-}
-
 
 resource "aws_ecs_service" "web-server" {
   name            = "web_server_service"
@@ -141,8 +92,8 @@ resource "aws_ecs_service" "web-server" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.web_server.arn
-    container_name   = "web-server"
-    container_port   = 80
+    container_name   = var.container_name
+    container_port   = var.container_port
   }
 
 }

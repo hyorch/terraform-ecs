@@ -3,8 +3,6 @@ resource "aws_ssm_parameter" "environment" {
   type  = "String"
   value = var.environment
 
-  overwrite = true
-
   tags = {
     Name = "environment"
   }
