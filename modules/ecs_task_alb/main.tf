@@ -16,6 +16,7 @@ resource "aws_ecs_task_definition" "web_server" {
       memory    = 512
       essential = true
 
+      # Get value with terraform data source and inject into container
       environment = [
         {
           name  = "ENV"
@@ -35,11 +36,16 @@ resource "aws_ecs_task_definition" "web_server" {
         }
       ]
 
+      # Get secrets from AWS Secrets Manager and pass arn
       secrets = [
         {
           name      = "kafkapass"
           valueFrom = data.aws_secretsmanager_secret.kafka_password.arn
-        }
+        }#,
+        # {
+        #   name =  "environment_variable_name",
+        #   valueFrom = "arn:aws:ssm:region:aws_account_id:parameter/parameter_name"
+        # }
       ]
 
       portMappings = [
